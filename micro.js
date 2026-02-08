@@ -1,9 +1,22 @@
 // get books and try to load some
-document.addEventListener('DOMContentLoaded', async function () {
-
+async function micro_reader(){
+let title_elem = document.getElementById("title");
+    let info_elem = document.getElementById("info");
+    let text_elem = document.getElementById("text");
     load_runner();
     // micro should simply ugly-render a book at random!
     let keys = await get_book_keys();
+    // if we have no books, wait a second and try again, up to 5 times. then give up.
+    let tries = 0;
+    while (keys.length == 0 && tries < 5){
+        await new Promise(r => setTimeout(r, 1000));
+        keys = await get_book_keys();
+        tries ++;
+    } 
+    // give up cry :(
+    if (keys.length == 0){
+        text_elem.innerHTML = "<h1> Oh no it failed </h1> <p> sorry... </p>";
+    }
     console.log(keys)
     shuffle(keys);
     console.log(keys)
@@ -12,9 +25,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     let book_doc = await idb_get_item(key);
     console.log(book_doc);
     //alert("Have fun reading: " + book_doc['book_title'])
-    let title_elem = document.getElementById("title");
-    let info_elem = document.getElementById("info");
-    let text_elem = document.getElementById("text");
+
     title_elem.innerText = book_doc['book_title'];
     
     // author name split
@@ -34,4 +45,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     txt = txt.replace(/\n\n/g, '<hr />');
     txt = txt.replace(/\n/g, '<br />');
     text_elem.innerHTML = txt;
-}, false);
+}
+
+document.addEventListener('DOMContentLoaded', micro_reader, false);
