@@ -26,7 +26,7 @@ function shuffle(array) {
 }
 
 // run this when the page is ready
-function load_runner() {
+function load_runner(parent_path) {
     _max_chunks = _settings['max_chunks']
     return new Promise(async(resolve, reject) => {
         // set up the db
@@ -38,10 +38,10 @@ function load_runner() {
             resolve();
         } else {
             console.log("loading", to_load)
-            await insert_chunk(to_load);
+            await insert_chunk(to_load, parent_path);
             console.log("probably loaded", to_load)
             set_next_chunk_index(to_load);
-            await load_runner();
+            await load_runner(parent_path);
             resolve();
         }
     });
@@ -63,7 +63,7 @@ function get_next_chunk_index() {
 function set_next_chunk_index(to){
     __INDEX_TRACK_VAR = _settings['index_track_ls_var'];
     this_index = parseInt(window.localStorage.getItem(__INDEX_TRACK_VAR), 10)
-    if (to > this_index){
+    if (!this_index || to > this_index){
         window.localStorage.setItem(__INDEX_TRACK_VAR, to);
     }
     return to + 1;
@@ -148,12 +148,12 @@ function get_book_keys(){
     });
 }
 
-function insert_chunk(index) {
+function insert_chunk(index, parent_path) {
     const db_name = _settings['db_name'];
     const version = _settings['db_version'];
     const store_name = _settings['store_name'];
     return new Promise(async(resolve, reject) => {
-        let res = await (await fetch('./books/books_' + index + '.json')).json();
+        let res = await (await fetch(parent_path + '/books_' + index + '.json')).json();
         console.log('res', res)
         const request = window.indexedDB.open(db_name, version);
         request.onsuccess = async (e) => {
@@ -161,7 +161,7 @@ function insert_chunk(index) {
             transaction = db.transaction([store_name], "readwrite");
             const objectStore = transaction.objectStore(store_name);
             transaction.oncomplete = function(e) {
-                console.log("db add success", e);
+                //console.log("db add success", e);
             };
             transaction.onerror = function(e) {
                 console.log("db add fail; aborting", e);

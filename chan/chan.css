@@ -1,0 +1,69 @@
+body {
+    background: #EEF2FF url(./fade-blue.png) top center repeat-x;
+}
+
+h1 {
+    text-align: center;
+    color: #AF0A0F;
+    font-family: Tahoma, sans-serif;
+    font-size: 29px;
+    font-weight: bold;
+    letter-spacing: -2px;
+    margin-top: 0px;
+}
+
+h3 {
+    color: #34345C;
+    text-decoration: none;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.reply{
+    background-color: #D6DAF0;
+    border: 1px solid #B7C5D9;
+    border-left: none;
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+    margin: 4px 0;
+    display: table;
+    border-left: none;
+    border-top: none;
+    padding-left: 10px;
+}
+
+.anon{
+    font-weight: bold;
+    color: #117743;
+    font-size: 10pt;
+}
+
+.sideArrows{
+    color: #B7C5D9;
+    float:left;
+    margin-right: 2px;
+    margin-top: 0px;
+    margin-left: 2px;
+}
+
+.reply_content{
+    display: block;
+}
+
+.fakemenu{
+    color: #34345C;
+    font-family: Arial, Helvetica, sans-serif;
+    opacity: 0.8;
+    display: inline-block;
+}
+
+.fakeimg{
+    float:left;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 0px;
+    margin-bottom: 10px;
+}

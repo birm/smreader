@@ -3,13 +3,13 @@ async function micro_reader(){
 let title_elem = document.getElementById("title");
     let info_elem = document.getElementById("info");
     let text_elem = document.getElementById("text");
-    load_runner();
+    load_runner("./books/");
     // micro should simply ugly-render a book at random!
     let keys = await get_book_keys();
     // if we have no books, wait a second and try again, up to 5 times. then give up.
     let tries = 0;
     while (keys.length == 0 && tries < 5){
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 200));
         keys = await get_book_keys();
         tries ++;
     } 
@@ -29,7 +29,11 @@ let title_elem = document.getElementById("title");
     title_elem.innerText = book_doc['book_title'];
     
     // author name split
-    let author_name = book_doc['author'].trim();
+    let author_name = book_doc['author']
+    if (author_name == null){
+        author_name = "UNKNOWN"
+    }
+    author_name = author_name.trim();
     if (author_name.indexOf(',') >= 0){
         let author_split = author_name.split(",")
         let last_name = author_split[0].trim();
