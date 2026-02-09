@@ -1,3 +1,13 @@
+// hide/unhide posts
+function checkbox_callback(e){
+    let replydiv = e.target.parentElement.parentElement.querySelector(".reply_content");
+    if (e.target.checked){
+        replydiv.style.display = "none"
+    } else {
+        replydiv.style.display = ""
+    }
+}
+
 // function to add a reply.
 function makeReply(body, datetime, sizeRatio){
     let section = document.createElement('div')
@@ -12,6 +22,7 @@ function makeReply(body, datetime, sizeRatio){
     name.classList.add('anon');
     let checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
+    checkbox.onchange = checkbox_callback;
     let anonname = document.createElement("span")
     anonname.innerText = "Anonomyous"
     name.appendChild(checkbox)
@@ -48,6 +59,8 @@ function makeReply(body, datetime, sizeRatio){
     section.appendChild(reply);
     return section;
 }
+
+
 
 function random_bg(img_obj){
     let palettes = [
@@ -124,6 +137,7 @@ async function chan_reader(){
     let info_elem = document.getElementById("info");
     load_runner("../books/");
     // micro should simply ugly-render a book at random!
+    let key;
     let keys = await get_book_keys();
     // if we have no books, wait a bit and try again, up to 10 times. then give up.
     let tries = 0;
@@ -136,10 +150,20 @@ async function chan_reader(){
     if (keys.length == 0){
         //text_elem.innerHTML = "<h1> Oh no it failed </h1> <p> sorry... </p>";
     }
+    const paramsString = window.location.search;
+    const searchParams = new URLSearchParams(paramsString);
+    if (searchParams.has("bookid") && (keys.includes(parseInt(searchParams.get("bookid"), 10)))){
+        key = parseInt(searchParams.get("bookid"), 10);
+    } else {
+        shuffle(keys);
+        key = keys[0];
+        searchParams.set("bookid", key)
+        window.location.search = "?" + searchParams.toString()
+    }
     console.log(keys)
-    shuffle(keys);
+    
     console.log(keys)
-    key = keys[0];
+    
     console.log(key)
     let book_doc = await idb_get_item(key);
     console.log(book_doc);
