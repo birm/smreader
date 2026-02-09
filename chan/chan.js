@@ -9,7 +9,7 @@ function checkbox_callback(e){
 }
 
 // function to add a reply.
-function makeReply(body, datetime, sizeRatio){
+function makeReply(body, datetime, sizeRatio, postid){
     let section = document.createElement('div')
     section.classList.add('section');
     let arrows = document.createElement('div');
@@ -29,7 +29,7 @@ function makeReply(body, datetime, sizeRatio){
     name.appendChild(anonname)
     reply.appendChild(name)
     let dateposted = document.createElement('span');
-    dateposted.innerText = " Posted " + datetime + " "
+    dateposted.innerText = " Posted " + datetime + " No." + postid;
     reply.appendChild(dateposted)
     let fakeMenu = document.createElement('span');
     fakeMenu.classList.add('fakemenu');
@@ -46,7 +46,10 @@ function makeReply(body, datetime, sizeRatio){
     fakeImg.style.width = imgw;
     
     replyContent.appendChild(fakeImg);
-    
+    let quotelink = document.createElement('div');
+    quotelink.classList.add("quotelink");
+    quotelink.innerText = ">>" + (postid-1);
+    replyContent.appendChild(quotelink)
     // split paragraphs.
     let body_split = body.split("\n");
     for (b of body_split){
@@ -214,7 +217,7 @@ async function chan_reader(){
             if (cutoff == undefined){
                 cutoff = 200; // fallback just in case
             }
-            let post = makeReply(p + buffer, chanDateFormat(reply_date) + " No." + starting_no, 1 - (0.3*Math.random()))
+            let post = makeReply(p + buffer, chanDateFormat(reply_date), 1 - (0.3*Math.random()), starting_no)
             reply_date.setSeconds(reply_date.getSeconds() + (p + buffer).length);
             starting_no += 1;
             buffer = "";
