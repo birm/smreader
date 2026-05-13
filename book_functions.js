@@ -16,7 +16,7 @@ let _POPULAR_IDS = [
     1184, // monte cristo
     24855, // concrete construction
     42486, // two magics
-    2855, // cia world factbook
+    27558, // cia world factbook
     345, // dracula
 ]
 
@@ -219,7 +219,7 @@ function load_book(id) {
             const db = e.target.result;
             let base_url = _settings['cors_api'];
             try {
-                const book = await fetch(base_url + "/" + id)
+                const book = await fetch(base_url + id)
                     .then(x => x.json());
                 book["etextno"] = id;
                 const transaction = db.transaction([store_name], "readwrite");
