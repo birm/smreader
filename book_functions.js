@@ -1,12 +1,24 @@
 _settings = {
     'index_track_ls_var': "_smreader_last_chunk",
+    'cors_api': "https://winter-smoke-d25e.rbirmingham.workers.dev/",
     'db_name': 'smreader-books',
     'store_name': 'books',
     'index_name': "book_title",
     'index_field': "book_title",
     'db_version': 1,
-    'max_chunks': 49,
 }
+
+// hard coded popular downloads
+let _POPULAR_IDS = [
+    84, // frankenstein
+    2701, // moby dick
+    1342, // prode and prejudice
+    1184, // monte cristo
+    24855, // concrete construction
+    42486, // two magics
+    2855, // cia world factbook
+    345, // dracula
+]
 
 // stolen shuffle function
 function shuffle(array) {
@@ -23,11 +35,12 @@ function shuffle(array) {
     [array[currentIndex], array[randomIndex]] = [
       array[randomIndex], array[currentIndex]];
   }
+  return array
 }
 
 // run this when the page is ready
 function load_runner(parent_path) {
-    _max_chunks = _settings['max_chunks']
+    _max_chunks = _settings['_smreader_last_chunk']
     return new Promise(async(resolve, reject) => {
         // set up the db
         await setup_db();
@@ -192,5 +205,36 @@ function insert_chunk(index, parent_path) {
             reject(e);
         }
         
+    });
+}
+
+// cache a specific book
+function load_book(id) {
+    const db_name = _settings['db_name'];
+    const version = _settings['db_version'];
+    const store_name = _settings['store_name'];
+    return new Promise((resolve, reject) => {
+        const request = window.indexedDB.open(db_name, version);
+        request.onsuccess = async (e) => {
+            const db = e.target.result;
+            let base_url = _settings['cors_api'];
+            try {
+                const book = await fetch(base_url + "/" + id)
+                    .then(x => x.json());
+                book["etextno"] = id;
+                const transaction = db.transaction([store_name], "readwrite");
+                const objectStore = transaction.objectStore(store_name);
+                const book_add_req = objectStore.put(book);
+                book_add_req.onsuccess = () => resolve();
+                book_add_req.onerror = (e) => reject(e);
+                transaction.onerror = (e) => {
+                    console.log("db transaction fail", e);
+                    reject(e);
+                };
+            } catch (e) {
+                reject(e);
+            }
+        };
+        request.onerror = (e) => reject(e);
     });
 }
