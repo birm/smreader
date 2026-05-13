@@ -133,42 +133,70 @@ function chanDateFormat(date = new Date()) {
   return `${mm}/${dd}/${yy}(${day})${hh}:${min}:${ss}`;
 }
 
+function getGutenbergId(input) {
+  if (!input) return null;
+
+  // If it's already a number or numeric string
+  if (/^\d+$/.test(input)) return Number(input);
+
+  // Try to extract ID from URL
+  const match = input.match(/gutenberg\.org\/(?:ebooks|files|cache\/epub)\/(\d+)/i);
+
+  return match ? Number(match[1]) : null;
+}
+
 // get books and try to load some
 async function chan_reader(){
+
+    // enter on id box triggers load
+    document.getElementById("book_id").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById("url_brn").click();
+    }
+    });
+    // btn triggers load
+    document.getElementById("url_brn").addEventListener("click", function(event){
+        let box = document.getElementById("book_id").value
+        let book_id = getGutenbergId(box)
+        if (book_id == null){
+            window.alert("could not understand")
+        } else {
+        const paramsString = window.location.search;
+        const searchParams = new URLSearchParams(paramsString);
+        // is it a url? or an id? get the id?
+        searchParams.set("bookid", book_id)
+        window.location.search = "?" + searchParams.toString()
+        }
+    })
+
+
     const cutoffs = [0, 50, 100, 100, 200, 200, 500, 1000]
     let title_elem = document.getElementById("title");
     let info_elem = document.getElementById("info");
-    load_runner("../books/");
+    //load_runner("../books/");
     // micro should simply ugly-render a book at random!
     let key;
     let keys = await get_book_keys();
-    // if we have no books, wait a bit and try again, up to 10 times. then give up.
-    let tries = 0;
-    while (keys.length == 0 && tries < 10){
-        await new Promise(r => setTimeout(r, 200));
-        keys = await get_book_keys();
-        tries ++;
-    } 
-    // give up cry :(
-    if (keys.length == 0){
-        //text_elem.innerHTML = "<h1> Oh no it failed </h1> <p> sorry... </p>";
-    }
     const paramsString = window.location.search;
     const searchParams = new URLSearchParams(paramsString);
-    if (searchParams.has("bookid") && (keys.includes(parseInt(searchParams.get("bookid"), 10)))){
+    if (searchParams.has("bookid")){
         key = parseInt(searchParams.get("bookid"), 10);
     } else {
-        shuffle(keys);
-        key = keys[0];
+        // random number of some range
+        key = shuffle(_POPULAR_IDS)[0]
         searchParams.set("bookid", key)
         window.location.search = "?" + searchParams.toString()
     }
     console.log(keys)
-    
-    console.log(keys)
-    
     console.log(key)
+    if (keys.indexOf(key)>=0){
+        console.log("already cached?")
+    } else {
+        await load_book(key)
+    }
     let book_doc = await idb_get_item(key);
+    
     console.log(book_doc);
     //alert("Have fun reading: " + book_doc['book_title'])
 
@@ -201,8 +229,9 @@ async function chan_reader(){
 
     // ok text formatting. lazy for now
     let txt = book_doc['text']
+    txt = txt.replace(/\r\n/g, '\n')
     txt = txt.replace(/\n\n/g, '<hr />');
-    txt = txt.replace(/\n/g, ' ');
+    //txt = txt.replace(/\n/g, ' ');
     let replies = document.getElementById('replies');
     replies.innerHTML = ""; // clear
     let posts = txt.split("<hr />")
