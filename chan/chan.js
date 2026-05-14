@@ -228,9 +228,9 @@ async function chan_reader(){
 
     // ok text formatting. lazy for now
     let txt = book_doc['text']
-    txt = txt.replace(/\r\n/g, '\n')
+    txt = txt.replace(/\r/g, '')
     txt = txt.replace(/\n\n/g, '<hr />');
-    //txt = txt.replace(/\n/g, ' ');
+    txt = txt.replace(/\n/g, ' ');
     let replies = document.getElementById('replies');
     replies.innerHTML = ""; // clear
     let posts = txt.split("<hr />")
