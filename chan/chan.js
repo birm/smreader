@@ -147,7 +147,7 @@ function getGutenbergId(input) {
 
 // get books and try to load some
 async function chan_reader(){
-
+    await setup_db();
     // enter on id box triggers load
     document.getElementById("book_id").addEventListener("keypress", function(event) {
     if (event.key === "Enter") {

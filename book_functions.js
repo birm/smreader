@@ -214,7 +214,6 @@ function load_book(id) {
     const version = _settings['db_version'];
     const store_name = _settings['store_name'];
     return new Promise(async(resolve, reject) => {
-        await setup_db();
         const request = window.indexedDB.open(db_name, version);
         request.onsuccess = async (e) => {
             const db = e.target.result;
