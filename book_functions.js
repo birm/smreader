@@ -83,32 +83,40 @@ function set_next_chunk_index(to){
 }
 
 // setup indexeddb
+let _db = null;
+
 function setup_db() {
+    if (_db) return Promise.resolve(_db);
+
     const db_name = _settings['db_name'];
     const version = _settings['db_version'];
     const store_name = _settings['store_name'];
     const index_name = _settings['index_name'];
     const index_field = _settings['index_field'];
+
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(db_name, version);
-        request.onerror = () => reject(request.error);
+
         request.onupgradeneeded = (e) => {
             const db = e.target.result;
-            const store = db.createObjectStore(store_name, {
-                keyPath: "etextno"
-            });
-            store.createIndex(index_name, index_field, {
-                unique: false
-            });
+
+            if (!db.objectStoreNames.contains(store_name)) {
+                const store = db.createObjectStore(store_name, {
+                    keyPath: "etextno"
+                });
+
+                store.createIndex(index_name, index_field, {
+                    unique: false
+                });
+            }
         };
+
         request.onsuccess = (e) => {
-            console.log(e)
-            resolve(e.target.result);
-        }
-        request.onerror = (e) => {
-            console.error(e)
-            reject(e)
-        }
+            _db = e.target.result;
+            resolve(_db);
+        };
+
+        request.onerror = () => reject(request.error);
     });
 }
 
@@ -117,19 +125,12 @@ function idb_get_item(id){
     const version = _settings['db_version'];
     const store_name = _settings['store_name'];
     return new Promise(async(resolve, reject) => {
-        var openRequest = indexedDB.open(db_name, version);
-        openRequest.onerror = (e) => {
-            console.error(e)
-            reject(error);
-        }
-        openRequest.onsuccess = (e) => {
-            const db = e.target.result;
-            transaction = db.transaction([store_name], "readonly");
-            const objectStore = transaction.objectStore(store_name);
-            req = objectStore.get(id)
-            req.onsuccess = (e) => {
-                resolve(req.result);
-            }
+        const db = await setup_db();   
+        transaction = db.transaction([store_name], "readonly");
+        const objectStore = transaction.objectStore(store_name);
+        req = objectStore.get(id)
+        req.onsuccess = (e) => {
+            resolve(req.result);
         }
     });
 }
@@ -140,73 +141,17 @@ function get_book_keys(){
     const store_name = _settings['store_name'];
     const index_name = _settings['index_name'];
     return new Promise(async(resolve, reject) => {
-        var openRequest = indexedDB.open(db_name, version);
-        openRequest.onerror = (e) => {
-            console.error(e)
-            reject(error);
-        }
-        openRequest.onsuccess = (e) => {
-            const db = e.target.result;
-            transaction = db.transaction([store_name], "readonly");
-            const objectStore = transaction.objectStore(store_name);
-            const index = objectStore.index(index_name);
-            req = index.getAllKeys();
-            req.onsuccess = (e) => {
-                resolve(req.result);
-            }
-        }
-        openRequest.onerror = (e) => {
-            reject(e);
+        const db = await setup_db();
+        transaction = db.transaction([store_name], "readonly");
+        const objectStore = transaction.objectStore(store_name);
+        const index = objectStore.index(index_name);
+        req = index.getAllKeys();
+        req.onsuccess = (e) => {
+            resolve(req.result);
         }
     });
 }
 
-function insert_chunk(index, parent_path) {
-    const db_name = _settings['db_name'];
-    const version = _settings['db_version'];
-    const store_name = _settings['store_name'];
-    return new Promise(async(resolve, reject) => {
-        let res = await (await fetch(parent_path + '/books_' + index + '.json')).json();
-        console.log('res', res)
-        const request = window.indexedDB.open(db_name, version);
-        request.onsuccess = async (e) => {
-            const db = e.target.result;
-            transaction = db.transaction([store_name], "readwrite");
-            const objectStore = transaction.objectStore(store_name);
-            transaction.oncomplete = function(e) {
-                //console.log("db add success", e);
-            };
-            transaction.onerror = function(e) {
-                console.log("db add fail; aborting", e);
-                transaction.abort();
-                reject(e);
-            }
-
-            // the meat
-            batch_arr = res.map(book => {
-                return new Promise((res, rej) => {
-                    book_add_req = objectStore.put(book);
-                    book_add_req.onsuccess = (e) => {
-                        res();
-                    }
-                    book_add_req.onerror = (e) => {
-                        console.error("Error with book", book);
-                        rej();
-                    }
-                }) 
-            });
-            Promise.all(batch_arr).then((x)=>{
-                console.log(x)
-                resolve();
-            });
-            
-        };
-        request.onerror = (e) => {
-            reject(e);
-        }
-        
-    });
-}
 
 // cache a specific book
 function load_book(id) {
@@ -214,27 +159,23 @@ function load_book(id) {
     const version = _settings['db_version'];
     const store_name = _settings['store_name'];
     return new Promise(async(resolve, reject) => {
-        const request = window.indexedDB.open(db_name, version);
-        request.onsuccess = async (e) => {
-            const db = e.target.result;
-            let base_url = _settings['cors_api'];
-            try {
-                const book = await fetch(base_url + id)
-                    .then(x => x.json());
-                book["etextno"] = id;
-                const transaction = db.transaction([store_name], "readwrite");
-                const objectStore = transaction.objectStore(store_name);
-                const book_add_req = objectStore.put(book);
-                book_add_req.onsuccess = () => resolve();
-                book_add_req.onerror = (e) => reject(e);
-                transaction.onerror = (e) => {
-                    console.log("db transaction fail", e);
-                    reject(e);
-                };
-            } catch (e) {
+        const db = await setup_db()
+        let base_url = _settings['cors_api'];
+        try {
+            const book = await fetch(base_url + id)
+                .then(x => x.json());
+            book["etextno"] = id;
+            const transaction = db.transaction([store_name], "readwrite");
+            const objectStore = transaction.objectStore(store_name);
+            const book_add_req = objectStore.put(book);
+            book_add_req.onsuccess = () => resolve();
+            book_add_req.onerror = (e) => reject(e);
+            transaction.onerror = (e) => {
+                console.log("db transaction fail", e);
                 reject(e);
-            }
-        };
-        request.onerror = (e) => reject(e);
+            };
+        } catch (e) {
+            reject(e);
+        }
     });
 }

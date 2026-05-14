@@ -147,7 +147,6 @@ function getGutenbergId(input) {
 
 // get books and try to load some
 async function chan_reader(){
-    await setup_db();
     // enter on id box triggers load
     document.getElementById("book_id").addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
@@ -177,7 +176,7 @@ async function chan_reader(){
     //load_runner("../books/");
     // micro should simply ugly-render a book at random!
     let key;
-    let keys = await get_book_keys();
+    let keys = await get_book_keys().catch(()=>[])
     const paramsString = window.location.search;
     const searchParams = new URLSearchParams(paramsString);
     if (searchParams.has("bookid")){
